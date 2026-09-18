@@ -1,0 +1,10 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0002-add-fullname-index
+      author: calimullin.a.r.
+      changes:
+        - sql:
+            sql: CREATE INDEX idx_teacher_full_name ON teacher (full_name);
+      rollback:
+        - sql:
+            sql: DROP INDEX idx_teacher_full_name;

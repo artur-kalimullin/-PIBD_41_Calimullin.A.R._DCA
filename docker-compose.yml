@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: teacher-postgres
+    environment:
+      POSTGRES_DB: teacher_db
+      POSTGRES_USER: teacher
+      POSTGRES_PASSWORD: teacher
+    ports:
+      - '5434:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U teacher -d teacher_db']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - teacher-net
+
+  teacher-service:
+    build: .
+    container_name: teacher-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/teacher_db
+      SPRING_DATASOURCE_USERNAME: teacher
+      SPRING_DATASOURCE_PASSWORD: teacher
+      SERVER_PORT: 8082
+    ports:
+      - '8082:8082'
+    networks:
+      - teacher-net
+
+networks:
+  teacher-net:
+    driver: bridge
+
+volumes:
+  postgres-data:

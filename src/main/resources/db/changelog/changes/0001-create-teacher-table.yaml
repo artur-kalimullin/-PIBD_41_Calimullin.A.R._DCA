@@ -1,0 +1,47 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0001-create-teacher-table
+      author: calimullin.a.r.
+      changes:
+        - createTable:
+            tableName: teacher
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: full_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: position
+                  type: VARCHAR(128)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(16)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fire_reason
+                  type: VARCHAR(255)
+              - column:
+                  name: subject
+                  type: VARCHAR(255)
+              - column:
+                  name: hired_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: fired_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
