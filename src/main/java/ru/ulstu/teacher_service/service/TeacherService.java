@@ -85,6 +85,6 @@ public class TeacherService {
     public TeacherReportDto buildReport() {
         long working = repository.countByStatus(TeacherStatus.WORKING);
         long fired = repository.countByStatus(TeacherStatus.FIRED);
-        return new TeacherReportDto(working, fired, working + fired);
+        return new TeacherReportDto(working, fired);
     }
 }
