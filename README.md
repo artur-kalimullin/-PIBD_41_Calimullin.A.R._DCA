@@ -19,7 +19,7 @@
 | Путь | Что это |
 |------|---------|
 | `src/main/java/ru/ulstu/teacher_service/` | Исходный код сервиса (Spring Boot 3, Gradle): domain, repository, service, web, dto. |
-| `src/main/resources/db/changelog/` | Миграции Liquibase: создание таблицы, индекса и тестовых данных. |
+| `src/main/resources/db/changelog/` | Миграции Liquibase: создание таблицы teacher. |
 | `src/main/resources/application.yaml` | Конфигурация Spring: datasource, JPA, Liquibase, порт. |
 | `build.gradle` | Зависимости и плагины Gradle. |
 | `Dockerfile` | Многоступенчатая сборка docker-образа сервиса. |
@@ -41,8 +41,6 @@
 | `hired_at` | TIMESTAMPTZ | NULL | Дата приёма на работу |
 | `fired_at` | TIMESTAMPTZ | NULL | Дата увольнения |
 | `created_at` | TIMESTAMPTZ | NOT NULL | Дата создания записи |
-
-Индекс: `idx_teacher_full_name` по `full_name`.
 
 ## REST API
 
@@ -77,7 +75,7 @@ docker compose up --build
 2. Соберётся образ `teacher-service` — Gradle внутри контейнера соберёт `bootJar`.
 3. Поднимется контейнер `teacher-postgres`, в нём создастся БД `teacher_db`.
 4. Через healthcheck Postgres перейдёт в статус `healthy`.
-5. Запустится контейнер `teacher-service`, Liquibase применит миграции, создаст таблицу `teacher`, индекс и вставит 4 тестовые записи.
+5. Запустится контейнер `teacher-service`, Liquibase применит миграции, создаст таблицу `teacher`.
 6. Spring Boot поднимется на порту **8082**.
 
 Признак успешного запуска в логах:

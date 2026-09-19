@@ -28,7 +28,7 @@ import ru.ulstu.teacher_service.web.dto.UpdateTeacherRequest;
 
 @RestController
 @RequestMapping("/api/teachers")
-@Tag(name = "Преподаватели", description = "Учёт преподавателей ВУЗа (вариант 22)")
+@Tag(name = "Преподаватели", description = "Учёт преподавателей ВУЗа (вариант 14)")
 public class TeacherController {
 
     private final TeacherService service;
