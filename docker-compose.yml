@@ -3,15 +3,15 @@ services:
     image: postgres:16
     container_name: teacher-postgres
     environment:
-      POSTGRES_DB: teacher_db
-      POSTGRES_USER: teacher
-      POSTGRES_PASSWORD: teacher
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - '5434:5432'
+      - '${POSTGRES_PORT}:5432'
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U teacher -d teacher_db']
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
       interval: 5s
       timeout: 3s
       retries: 10
@@ -25,12 +25,12 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/teacher_db
-      SPRING_DATASOURCE_USERNAME: teacher
-      SPRING_DATASOURCE_PASSWORD: teacher
-      SERVER_PORT: 8082
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVER_PORT: ${SERVICE_PORT}
     ports:
-      - '8082:8082'
+      - '${SERVICE_PORT}:${SERVICE_PORT}'
     networks:
       - teacher-net
 

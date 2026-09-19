@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.ulstu.teacher_service.domain.Teacher;
 import ru.ulstu.teacher_service.domain.TeacherStatus;
 import ru.ulstu.teacher_service.repository.TeacherRepository;
+import ru.ulstu.teacher_service.repository.TeacherStatusRepository;
 import ru.ulstu.teacher_service.web.dto.AssignSubjectRequest;
 import ru.ulstu.teacher_service.web.dto.FireTeacherRequest;
 import ru.ulstu.teacher_service.web.dto.HireTeacherRequest;
@@ -20,9 +21,12 @@ import java.time.Instant;
 public class TeacherService {
 
     private final TeacherRepository repository;
+    private final TeacherStatusRepository statusRepository;
 
-    public TeacherService(TeacherRepository repository) {
+    public TeacherService(TeacherRepository repository,
+                          TeacherStatusRepository statusRepository) {
         this.repository = repository;
+        this.statusRepository = statusRepository;
     }
 
     @Transactional(readOnly = true)
@@ -41,7 +45,7 @@ public class TeacherService {
         Teacher teacher = new Teacher();
         teacher.setFullName(request.fullName());
         teacher.setPosition(request.position());
-        teacher.setStatus(TeacherStatus.WORKING);
+        teacher.setStatus(statusByCode("WORKING"));
         teacher.setHiredAt(Instant.now());
         return repository.save(teacher);
     }
@@ -55,10 +59,10 @@ public class TeacherService {
 
     public Teacher fire(Long id, FireTeacherRequest request) {
         Teacher teacher = getById(id);
-        if (teacher.getStatus() == TeacherStatus.FIRED) {
+        if ("FIRED".equals(teacher.getStatus().getCode())) {
             throw new BusinessRuleException("Преподаватель уже уволен");
         }
-        teacher.setStatus(TeacherStatus.FIRED);
+        teacher.setStatus(statusByCode("FIRED"));
         teacher.setFireReason(request.reason());
         teacher.setFiredAt(Instant.now());
         return teacher;
@@ -66,7 +70,7 @@ public class TeacherService {
 
     public Teacher assignSubject(Long id, AssignSubjectRequest request) {
         Teacher teacher = getById(id);
-        if (teacher.getStatus() == TeacherStatus.FIRED) {
+        if ("FIRED".equals(teacher.getStatus().getCode())) {
             throw new BusinessRuleException(
                     "Нельзя назначить предмет уволенному преподавателю");
         }
@@ -83,8 +87,14 @@ public class TeacherService {
 
     @Transactional(readOnly = true)
     public TeacherReportDto buildReport() {
-        long working = repository.countByStatus(TeacherStatus.WORKING);
-        long fired = repository.countByStatus(TeacherStatus.FIRED);
+        long working = repository.countByStatus_Code("WORKING");
+        long fired = repository.countByStatus_Code("FIRED");
         return new TeacherReportDto(working, fired);
+    }
+
+    private TeacherStatus statusByCode(String code) {
+        return statusRepository.findByCode(code)
+                .orElseThrow(() -> new NotFoundException(
+                        "Статус " + code + " не найден"));
     }
 }

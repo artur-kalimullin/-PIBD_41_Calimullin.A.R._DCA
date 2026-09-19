@@ -45,3 +45,6 @@ databaseChangeLog:
                   type: TIMESTAMP WITH TIME ZONE
                   constraints:
                     nullable: false
+      rollback:
+        - dropTable:
+            tableName: teacher

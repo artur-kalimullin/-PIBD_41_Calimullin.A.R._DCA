@@ -2,11 +2,12 @@ package ru.ulstu.teacher_service.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
@@ -25,9 +26,9 @@ public class Teacher {
     @Column(name = "position", nullable = false, length = 128)
     private String position;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 16)
-    private TeacherStatus status = TeacherStatus.WORKING;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "status_id", nullable = false)
+    private TeacherStatus status;
 
     @Column(name = "fire_reason", length = 255)
     private String fireReason;

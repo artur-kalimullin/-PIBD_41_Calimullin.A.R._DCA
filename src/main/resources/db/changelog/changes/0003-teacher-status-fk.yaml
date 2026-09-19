@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 0003-teacher-status-fk
+      author: calimullin.a.r.
+      changes:
+        - addColumn:
+            tableName: teacher
+            columns:
+              - column:
+                  name: status_id
+                  type: BIGINT
+        - sql:
+            sql: UPDATE teacher SET status_id = (SELECT id FROM teacher_status WHERE code = teacher.status)
+        - addNotNullConstraint:
+            tableName: teacher
+            columnName: status_id
+        - addForeignKeyConstraint:
+            baseTableName: teacher
+            baseColumnNames: status_id
+            referencedTableName: teacher_status
+            referencedColumnNames: id
+            constraintName: fk_teacher_status
+        - dropColumn:
+            tableName: teacher
+            columnName: status
+rollback:
+        - addColumn:
+            tableName: teacher
+            columns:
+              - column: { name: status, type: VARCHAR(16) }
+        - sql:
+            sql: UPDATE teacher SET status = (SELECT code FROM teacher_status WHERE id = teacher.status_id)
+        - addNotNullConstraint:
+            tableName: teacher
+            columnName: status
+            columnDataType: VARCHAR(16)
+        - dropForeignKeyConstraint:
+            baseTableName: teacher
+            constraintName: fk_teacher_status
+        - dropColumn:
+            tableName: teacher
+            columnName: status_id

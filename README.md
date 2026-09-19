@@ -61,6 +61,11 @@
 
 ### Вариант 1. Через Docker
 
+Перед запуском скопируйте шаблон:
+
+```bash
+cp .env.example .env
+
 Требования: Установлен Docker Desktop.
 
 Запуск:
@@ -101,6 +106,11 @@ docker compose down -v
 Требования:
 - Java 21 (проверить: `java -version`).
 - Docker — только для Postgres.
+
+Перед запуском скопируйте шаблон:
+
+```bash
+cp .env.example .env
 
 1. Поднимите Postgres в контейнере, но **не** поднимайте сервис:
 

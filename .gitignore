@@ -30,3 +30,8 @@ bin/
 # OS
 .DS_Store
 Thumbs.db
+
+# Local env
+.env
+.env.local
+*.env.local

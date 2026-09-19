@@ -1,7 +1,6 @@
 package ru.ulstu.teacher_service.web.dto;
 
 import ru.ulstu.teacher_service.domain.Teacher;
-import ru.ulstu.teacher_service.domain.TeacherStatus;
 
 import java.time.Instant;
 
@@ -9,7 +8,8 @@ public record TeacherDto(
         Long id,
         String fullName,
         String position,
-        TeacherStatus status,
+        String statusCode,   // WORKING / FIRED
+        String statusName,   // Работает / Уволен
         String fireReason,
         String subject,
         Instant hiredAt,
@@ -21,7 +21,8 @@ public record TeacherDto(
                 teacher.getId(),
                 teacher.getFullName(),
                 teacher.getPosition(),
-                teacher.getStatus(),
+                teacher.getStatus().getCode(),
+                teacher.getStatus().getName(),
                 teacher.getFireReason(),
                 teacher.getSubject(),
                 teacher.getHiredAt(),
