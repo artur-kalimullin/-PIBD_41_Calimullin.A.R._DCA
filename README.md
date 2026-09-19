@@ -65,7 +65,8 @@
 
 ```bash
 cp .env.example .env
-
+ ```
+ 
 Требования: Установлен Docker Desktop.
 
 Запуск:
@@ -111,6 +112,7 @@ docker compose down -v
 
 ```bash
 cp .env.example .env
+ ```
 
 1. Поднимите Postgres в контейнере, но **не** поднимайте сервис:
 
