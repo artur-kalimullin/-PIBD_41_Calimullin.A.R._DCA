@@ -1,0 +1,35 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: gateway
+
+  cloud:
+    gateway:
+      routes:
+        - id: teacher-service
+          uri: ${TEACHER_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/teachers/**
+
+        - id: report-service
+          uri: ${REPORT_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/reports/**
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

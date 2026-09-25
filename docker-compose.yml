@@ -19,7 +19,9 @@ services:
       - teacher-net
 
   teacher-service:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: teacher-service
     depends_on:
       postgres:
@@ -31,6 +33,44 @@ services:
       SERVER_PORT: ${SERVICE_PORT}
     ports:
       - '${SERVICE_PORT}:${SERVICE_PORT}'
+    networks:
+      - teacher-net
+
+  report-service:
+    build:
+      context: .
+      dockerfile: report-service/Dockerfile
+    container_name: report-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      teacher-service:
+        condition: service_started
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SERVER_PORT: 8083
+    ports:
+      - '8083:8083'
+    restart: on-failure
+    networks:
+      - teacher-net
+
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    container_name: gateway
+    depends_on:
+      - teacher-service
+      - report-service
+    environment:
+      SERVER_PORT: 8080
+      TEACHER_SERVICE_URL: http://teacher-service:8082
+      REPORT_SERVICE_URL: http://report-service:8083
+    ports:
+      - '8080:8080'
     networks:
       - teacher-net
 

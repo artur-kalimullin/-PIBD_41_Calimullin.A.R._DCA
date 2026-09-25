@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: report-service
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/teacher_db}
+    username: ${SPRING_DATASOURCE_USERNAME:teacher}
+    password: ${SPRING_DATASOURCE_PASSWORD:teacher}
+
+server:
+  port: ${SERVER_PORT:8083}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
