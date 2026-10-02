@@ -3,6 +3,9 @@ package ru.ulstu.teacher_service.web;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -91,5 +94,11 @@ public class TeacherController {
     @Operation(summary = "Отчёт: сколько работает, а сколько уволено")
     public TeacherReportDto report() {
         return service.buildReport();
+    }
+
+    @GetMapping("/all")
+    @Operation(summary = "Получить всех преподавателей")
+    public List<TeacherDto> getAll() {
+        return service.findAll(Pageable.unpaged()).map(TeacherDto::of).getContent();
     }
 }

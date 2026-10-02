@@ -2,13 +2,12 @@ spring:
   application:
     name: report-service
 
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/teacher_db}
-    username: ${SPRING_DATASOURCE_USERNAME:teacher}
-    password: ${SPRING_DATASOURCE_PASSWORD:teacher}
-
 server:
   port: ${SERVER_PORT:8083}
+
+teacher:
+  service:
+    url: ${TEACHER_SERVICE_URL:http://localhost:8082}
 
 springdoc:
   swagger-ui:

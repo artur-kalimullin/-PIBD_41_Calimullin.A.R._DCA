@@ -31,6 +31,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SERVER_PORT: ${SERVICE_PORT}
+      REPORT_SERVICE_URL: http://report-service:8083
     ports:
       - '${SERVICE_PORT}:${SERVICE_PORT}'
     networks:
@@ -42,17 +43,10 @@ services:
       dockerfile: report-service/Dockerfile
     container_name: report-service
     depends_on:
-      postgres:
-        condition: service_healthy
-      teacher-service:
-        condition: service_started
+      - teacher-service
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SERVER_PORT: 8083
-    ports:
-      - '8083:8083'
+      TEACHER_SERVICE_URL: http://teacher-service:8082
     restart: on-failure
     networks:
       - teacher-net
@@ -68,7 +62,6 @@ services:
     environment:
       SERVER_PORT: 8080
       TEACHER_SERVICE_URL: http://teacher-service:8082
-      REPORT_SERVICE_URL: http://report-service:8083
     ports:
       - '8080:8080'
     networks:
