@@ -27,6 +27,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      LOGSTASH_HOST: logstash
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
@@ -45,6 +46,7 @@ services:
     depends_on:
       - teacher-service
     environment:
+      LOGSTASH_HOST: logstash
       SERVER_PORT: 8083
       TEACHER_SERVICE_URL: http://teacher-service:8082
     restart: on-failure
@@ -60,10 +62,49 @@ services:
       - teacher-service
       - report-service
     environment:
+      LOGSTASH_HOST: logstash
       SERVER_PORT: 8080
       TEACHER_SERVICE_URL: http://teacher-service:8082
     ports:
       - '8080:8080'
+    networks:
+      - teacher-net
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - '9200:9200'
+    networks:
+      - teacher-net
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.1
+    container_name: logstash
+    volumes:
+      - ./logstash/pipeline:/usr/share/logstash/pipeline
+    ports:
+      - '5044:5044'
+    depends_on:
+      - elasticsearch
+    networks:
+      - teacher-net
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.12.1
+    container_name: kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - '5601:5601'
+    depends_on:
+      - elasticsearch
     networks:
       - teacher-net
 
@@ -73,3 +114,4 @@ networks:
 
 volumes:
   postgres-data:
+  elasticsearch-data:

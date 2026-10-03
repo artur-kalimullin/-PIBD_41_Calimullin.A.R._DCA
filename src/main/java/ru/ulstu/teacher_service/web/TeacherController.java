@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -34,6 +36,8 @@ import ru.ulstu.teacher_service.web.dto.UpdateTeacherRequest;
 @Tag(name = "Преподаватели", description = "Учёт преподавателей ВУЗа (вариант 14)")
 public class TeacherController {
 
+    private static final Logger log = LoggerFactory.getLogger(TeacherController.class);
+
     private final TeacherService service;
 
     public TeacherController(TeacherService service) {
@@ -43,12 +47,15 @@ public class TeacherController {
     @GetMapping
     @Operation(summary = "Список преподавателей (с постраничным выводом)")
     public Page<TeacherDto> list(@PageableDefault(size = 20) Pageable pageable) {
+        log.info("GET /api/teachers page={} size={}",
+                pageable.getPageNumber(), pageable.getPageSize());
         return service.findAll(pageable).map(TeacherDto::of);
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Получить преподавателя по идентификатору")
     public TeacherDto get(@PathVariable Long id) {
+        log.info("GET /api/teachers/{}", id);
         return TeacherDto.of(service.getById(id));
     }
 
@@ -56,6 +63,8 @@ public class TeacherController {
     @Operation(summary = "Принять человека на должность")
     public ResponseEntity<TeacherDto> hire(@Valid @RequestBody HireTeacherRequest request,
                                            UriComponentsBuilder uriBuilder) {
+        log.info("POST /api/teachers fullName={} position={}",
+                request.fullName(), request.position());
         TeacherDto created = TeacherDto.of(service.hire(request));
         return ResponseEntity
                 .created(uriBuilder.path("/api/teachers/{id}").build(created.id()))
@@ -66,6 +75,7 @@ public class TeacherController {
     @Operation(summary = "Отредактировать информацию о преподавателе")
     public TeacherDto update(@PathVariable Long id,
                              @Valid @RequestBody UpdateTeacherRequest request) {
+        log.info("PUT /api/teachers/{}", id);
         return TeacherDto.of(service.update(id, request));
     }
 
@@ -73,6 +83,7 @@ public class TeacherController {
     @Operation(summary = "Уволить преподавателя по причине")
     public TeacherDto fire(@PathVariable Long id,
                            @Valid @RequestBody FireTeacherRequest request) {
+        log.info("POST /api/teachers/{}/fire reason={}", id, request.reason());
         return TeacherDto.of(service.fire(id, request));
     }
 
@@ -80,6 +91,7 @@ public class TeacherController {
     @Operation(summary = "Назначить предмет для чтения")
     public TeacherDto assignSubject(@PathVariable Long id,
                                     @Valid @RequestBody AssignSubjectRequest request) {
+        log.info("POST /api/teachers/{}/assign-subject subject={}", id, request.subject());
         return TeacherDto.of(service.assignSubject(id, request));
     }
 
@@ -87,18 +99,21 @@ public class TeacherController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @Operation(summary = "Удалить запись о преподавателе")
     public void delete(@PathVariable Long id) {
+        log.info("DELETE /api/teachers/{}", id);
         service.delete(id);
     }
 
     @GetMapping("/report")
     @Operation(summary = "Отчёт: сколько работает, а сколько уволено")
     public TeacherReportDto report() {
+        log.info("GET /api/teachers/report");
         return service.buildReport();
     }
 
     @GetMapping("/all")
     @Operation(summary = "Получить всех преподавателей")
     public List<TeacherDto> getAll() {
+        log.info("GET /api/teachers/all (internal call from report-service)");
         return service.findAll(Pageable.unpaged()).map(TeacherDto::of).getContent();
     }
 }
