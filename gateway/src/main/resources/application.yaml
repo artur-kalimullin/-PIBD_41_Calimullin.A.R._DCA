@@ -12,6 +12,10 @@ spring:
           uri: ${TEACHER_SERVICE_URL:http://localhost:8082}
           predicates:
             - Path=/api/teachers/**,/api/reports/**
+        - id: file-service
+          uri: ${FILE_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/files/**
 
       globalcors:
         cors-configurations:

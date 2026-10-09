@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
@@ -46,6 +47,16 @@ public class ReportProxyController {
         ResponseEntity<Object> response = restTemplate.getForEntity(url, Object.class);
         log.info("PROXY <- report-service: GET /api/reports/summary status={} body={}",
                 response.getStatusCode().value(), response.getBody());
+        return response;
+    }
+
+    @PostMapping("/teachers/csv/save")
+    @Operation(summary = "Прокси сохранения CSV-отчёта в файловое хранилище")
+    public ResponseEntity<Object> saveCsv() {
+        log.info("PROXY -> report-service: POST /api/reports/teachers/csv/save");
+        String url = reportServiceUrl + "/api/reports/teachers/csv/save";
+        ResponseEntity<Object> response = restTemplate.postForEntity(url, null, Object.class);
+        log.info("PROXY <- report-service: status={}", response.getStatusCode().value());
         return response;
     }
 }

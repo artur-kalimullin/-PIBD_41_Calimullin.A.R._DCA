@@ -13,6 +13,10 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+file:
+  service:
+    url: ${FILE_SERVICE_URL:http://localhost:8084}
+
 management:
   endpoints:
     web:

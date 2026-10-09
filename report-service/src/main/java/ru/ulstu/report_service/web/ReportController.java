@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.ulstu.report_service.domain.ReportSummary;
@@ -12,6 +13,7 @@ import ru.ulstu.report_service.domain.TeacherReportRow;
 import ru.ulstu.report_service.service.ReportService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reports")
@@ -43,5 +45,12 @@ public class ReportController {
         log.info("REPORT: returning summary working={} fired={}",
                 result.workingCount(), result.firedCount());
         return result;
+    }
+
+    @PostMapping("/teachers/csv/save")
+    @Operation(summary = "Сформировать CSV и сохранить в файловое хранилище")
+    public Map<String, Object> saveCsv() {
+        log.info("REPORT: incoming POST /api/reports/teachers/csv/save");
+        return service.saveCsvToStorage();
     }
 }

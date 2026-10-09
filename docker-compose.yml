@@ -45,11 +45,27 @@ services:
     container_name: report-service
     depends_on:
       - teacher-service
+      - file-service
     environment:
       LOGSTASH_HOST: logstash
       SERVER_PORT: 8083
       TEACHER_SERVICE_URL: http://teacher-service:8082
+      FILE_SERVICE_URL: http://file-service:8084
     restart: on-failure
+    networks:
+      - teacher-net
+    
+  file-service:
+    build:
+      context: .
+      dockerfile: file-service/Dockerfile
+    container_name: file-service
+    environment:
+      LOGSTASH_HOST: logstash
+      SERVER_PORT: 8084
+      STORAGE_PATH: /app/storage
+    volumes:
+      - file-storage-data:/app/storage
     networks:
       - teacher-net
 
@@ -61,10 +77,12 @@ services:
     depends_on:
       - teacher-service
       - report-service
+      - file-service
     environment:
       LOGSTASH_HOST: logstash
       SERVER_PORT: 8080
       TEACHER_SERVICE_URL: http://teacher-service:8082
+      FILE_SERVICE_URL: http://file-service:8084
     ports:
       - '8080:8080'
     networks:
@@ -115,3 +133,4 @@ networks:
 volumes:
   postgres-data:
   elasticsearch-data:
+  file-storage-data:

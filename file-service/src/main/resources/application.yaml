@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: file-service
+
+server:
+  port: ${SERVER_PORT:8084}
+
+storage:
+  path: ${STORAGE_PATH:./storage}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,custom
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}

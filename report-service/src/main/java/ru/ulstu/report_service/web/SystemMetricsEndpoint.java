@@ -1,4 +1,4 @@
-package ru.ulstu.teacher_service.web;
+package ru.ulstu.report_service.web;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;

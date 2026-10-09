@@ -30,7 +30,6 @@ public class SystemMetricsEndpoint {
         result.put("jvmThreadsLive", getMetricValue("jvm.threads.live"));
         result.put("processUptime", getMetricValue("process.uptime"));
 
-        // Специфично для шлюза
         result.put("gatewayRoutesCount",
                 getMetricValue("spring.cloud.gateway.routes.count"));
 
