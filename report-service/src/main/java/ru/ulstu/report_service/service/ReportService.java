@@ -59,6 +59,7 @@ public class ReportService {
     private byte[] buildCsv() {
         List<TeacherReportRow> teachers = findAllTeachers();
         StringBuilder sb = new StringBuilder();
+        sb.append('\uFEFF');
         sb.append("id,fullName,position,statusCode,statusName,fireReason,subject,hiredAt,firedAt,createdAt\n");
         if (teachers != null) {
             for (TeacherReportRow t : teachers) {
