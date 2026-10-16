@@ -13,6 +13,7 @@ import ru.ulstu.report_service.domain.TeacherReportRow;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -22,14 +23,14 @@ public class ReportService {
     private static final Logger log = LoggerFactory.getLogger(ReportService.class);
 
     private final RestTemplate restTemplate;
-    private final FileStorageClient fileStorageClient;
+    private final ReportQueueProducer queueProducer;
     private final String teacherServiceUrl;
 
     public ReportService(RestTemplate restTemplate,
-                         FileStorageClient fileStorageClient,
+                         ReportQueueProducer queueProducer,
                          @Value("${teacher.service.url}") String teacherServiceUrl) {
         this.restTemplate = restTemplate;
-        this.fileStorageClient = fileStorageClient;
+        this.queueProducer = queueProducer;
         this.teacherServiceUrl = teacherServiceUrl;
     }
 
@@ -62,15 +63,15 @@ public class ReportService {
         if (teachers != null) {
             for (TeacherReportRow t : teachers) {
                 sb.append(csv(t.id())).append(',')
-                .append(csv(t.fullName())).append(',')
-                .append(csv(t.position())).append(',')
-                .append(csv(t.statusCode())).append(',')
-                .append(csv(t.statusName())).append(',')
-                .append(csv(t.fireReason())).append(',')
-                .append(csv(t.subject())).append(',')
-                .append(csv(t.hiredAt())).append(',')
-                .append(csv(t.firedAt())).append(',')
-                .append(csv(t.createdAt())).append('\n');
+                  .append(csv(t.fullName())).append(',')
+                  .append(csv(t.position())).append(',')
+                  .append(csv(t.statusCode())).append(',')
+                  .append(csv(t.statusName())).append(',')
+                  .append(csv(t.fireReason())).append(',')
+                  .append(csv(t.subject())).append(',')
+                  .append(csv(t.hiredAt())).append(',')
+                  .append(csv(t.firedAt())).append(',')
+                  .append(csv(t.createdAt())).append('\n');
             }
         }
         return sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -80,7 +81,20 @@ public class ReportService {
         byte[] csv = buildCsv();
         String filename = "teachers-report-"
                 + Instant.now().toString().replace(":", "-") + ".csv";
-        return fileStorageClient.upload(filename, csv);
+
+        CsvReportMessage message = new CsvReportMessage(
+                filename,
+                Base64.getEncoder().encodeToString(csv));
+
+        queueProducer.send(message);
+        log.info("CSV report queued: name={} bytes={}", filename, csv.length);
+
+        return Map.of(
+                "status", "QUEUED",
+                "filename", filename,
+                "size", csv.length,
+                "queue", "report.csv.queue"
+        );
     }
 
     private String csv(Object v) {

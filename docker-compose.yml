@@ -18,6 +18,25 @@ services:
     networks:
       - teacher-net
 
+  artemis:
+    image: apache/activemq-artemis:2.37.0
+    container_name: artemis
+    environment:
+      ARTEMIS_USER: teacher
+      ARTEMIS_PASSWORD: teacher
+      ANONYMOUS_LOGIN: "false"
+    ports:
+      - '61616:61616'
+      - '8161:8161'
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -f http://localhost:8161/console || exit 1']
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - teacher-net
+
   teacher-service:
     build:
       context: .
@@ -44,26 +63,36 @@ services:
       dockerfile: report-service/Dockerfile
     container_name: report-service
     depends_on:
-      - teacher-service
-      - file-service
+      teacher-service:
+        condition: service_started
+      artemis:
+        condition: service_healthy
     environment:
       LOGSTASH_HOST: logstash
       SERVER_PORT: 8083
       TEACHER_SERVICE_URL: http://teacher-service:8082
-      FILE_SERVICE_URL: http://file-service:8084
+      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
+      SPRING_ARTEMIS_USER: teacher
+      SPRING_ARTEMIS_PASSWORD: teacher
     restart: on-failure
     networks:
       - teacher-net
-    
+
   file-service:
     build:
       context: .
       dockerfile: file-service/Dockerfile
     container_name: file-service
+    depends_on:
+      artemis:
+        condition: service_healthy
     environment:
       LOGSTASH_HOST: logstash
       SERVER_PORT: 8084
       STORAGE_PATH: /app/storage
+      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
+      SPRING_ARTEMIS_USER: teacher
+      SPRING_ARTEMIS_PASSWORD: teacher
     ports:
       - '8084:8084'
     volumes:
