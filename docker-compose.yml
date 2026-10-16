@@ -22,12 +22,12 @@ services:
     image: apache/activemq-artemis:2.37.0
     container_name: artemis
     environment:
-      ARTEMIS_USER: teacher
-      ARTEMIS_PASSWORD: teacher
+      ARTEMIS_USER: ${ARTEMIS_USER}
+      ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD}
       ANONYMOUS_LOGIN: "false"
     ports:
-      - '61616:61616'
-      - '8161:8161'
+      - '${ARTEMIS_PORT}:61616'
+      - '${ARTEMIS_CONSOLE_PORT}:8161'
     healthcheck:
       test: ['CMD-SHELL', 'curl -f http://localhost:8161/console || exit 1']
       interval: 15s
@@ -72,8 +72,8 @@ services:
       SERVER_PORT: 8083
       TEACHER_SERVICE_URL: http://teacher-service:8082
       SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
-      SPRING_ARTEMIS_USER: teacher
-      SPRING_ARTEMIS_PASSWORD: teacher
+      SPRING_ARTEMIS_USER: ${ARTEMIS_USER}
+      SPRING_ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD}
     restart: on-failure
     networks:
       - teacher-net
@@ -91,8 +91,8 @@ services:
       SERVER_PORT: 8084
       STORAGE_PATH: /app/storage
       SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
-      SPRING_ARTEMIS_USER: teacher
-      SPRING_ARTEMIS_PASSWORD: teacher
+      SPRING_ARTEMIS_USER: ${ARTEMIS_USER}
+      SPRING_ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD}
     ports:
       - '8084:8084'
     volumes:

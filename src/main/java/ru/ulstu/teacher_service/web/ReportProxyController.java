@@ -59,4 +59,14 @@ public class ReportProxyController {
         log.info("PROXY <- report-service: status={}", response.getStatusCode().value());
         return response;
     }
+
+    @PostMapping("/teachers/csv/save-fail")
+    @Operation(summary = "Прокси: запуск сбойного сценария для демонстрации саги")
+    public ResponseEntity<Object> saveCsvWithFailure() {
+        log.info("PROXY -> report-service: POST /api/reports/teachers/csv/save-fail");
+        String url = reportServiceUrl + "/api/reports/teachers/csv/save-fail";
+        ResponseEntity<Object> response = restTemplate.postForEntity(url, null, Object.class);
+        log.info("PROXY <- report-service: status={}", response.getStatusCode().value());
+        return response;
+    }
 }

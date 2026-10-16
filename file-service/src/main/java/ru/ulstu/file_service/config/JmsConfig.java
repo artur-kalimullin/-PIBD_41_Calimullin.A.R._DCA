@@ -7,6 +7,7 @@ import org.springframework.jms.support.converter.MappingJackson2MessageConverter
 import org.springframework.jms.support.converter.MessageConverter;
 import org.springframework.jms.support.converter.MessageType;
 import ru.ulstu.file_service.service.CsvReportMessage;
+import ru.ulstu.file_service.service.FileSaveFailedEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +15,8 @@ import java.util.Map;
 @Configuration
 public class JmsConfig {
 
-    public static final String CSV_QUEUE = "report.csv.queue";
+    public static final String CSV_QUEUE          = "report.csv.queue";
+    public static final String COMPENSATION_QUEUE = "saga.compensation.queue";
 
     @Bean
     public MessageConverter jacksonJmsMessageConverter(ObjectMapper objectMapper) {
@@ -24,7 +26,8 @@ public class JmsConfig {
         converter.setObjectMapper(objectMapper);
 
         Map<String, Class<?>> typeIdMappings = new HashMap<>();
-        typeIdMappings.put("csvReport", CsvReportMessage.class);
+        typeIdMappings.put("csvReport",           CsvReportMessage.class);
+        typeIdMappings.put("fileSaveFailedEvent", FileSaveFailedEvent.class);
         converter.setTypeIdMappings(typeIdMappings);
 
         return converter;

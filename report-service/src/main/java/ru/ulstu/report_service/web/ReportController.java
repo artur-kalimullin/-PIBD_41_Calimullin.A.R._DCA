@@ -53,4 +53,11 @@ public class ReportController {
         log.info("REPORT: incoming POST /api/reports/teachers/csv/save");
         return service.saveCsvToStorage();
     }
+
+    @PostMapping("/teachers/csv/save-fail")
+    @Operation(summary = "Демонстрация сбоя: отчёт с маркером fail для саги-компенсации")
+    public Map<String, Object> saveCsvWithFailure() {
+        log.info("REPORT: incoming POST /api/reports/teachers/csv/save-fail");
+        return service.saveCsvWithFailure();
+    }
 }

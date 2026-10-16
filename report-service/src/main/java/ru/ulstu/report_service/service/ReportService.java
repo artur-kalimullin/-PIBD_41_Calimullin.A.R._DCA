@@ -105,4 +105,24 @@ public class ReportService {
         }
         return s;
     }
+
+    public Map<String, Object> saveCsvWithFailure() {
+        byte[] csv = buildCsv();
+        String filename = "fail-teachers-report-"
+                + Instant.now().toString().replace(":", "-") + ".csv";
+
+        CsvReportMessage message = new CsvReportMessage(
+                filename,
+                Base64.getEncoder().encodeToString(csv));
+
+        queueProducer.send(message);
+        log.info("SAGA: отправлен fail-отчёт: name={} bytes={}", filename, csv.length);
+
+        return Map.of(
+                "status", "QUEUED_WITH_FAILURE",
+                "filename", filename,
+                "size", csv.length,
+                "queue", "report.csv.queue"
+        );
+    }
 }
