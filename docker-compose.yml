@@ -64,6 +64,8 @@ services:
       LOGSTASH_HOST: logstash
       SERVER_PORT: 8084
       STORAGE_PATH: /app/storage
+    ports:
+      - '8084:8084'
     volumes:
       - file-storage-data:/app/storage
     networks:

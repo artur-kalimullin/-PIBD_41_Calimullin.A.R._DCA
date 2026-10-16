@@ -5,6 +5,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import ru.ulstu.file_service.domain.StoredFileInfo;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import ru.ulstu.file_service.domain.PageResponse;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -27,6 +30,7 @@ public class FileStorageService {
         log.info("File storage root: {}", this.storageRoot);
     }
 
+    @CacheEvict(value = "filesList", allEntries = true)
     public StoredFileInfo store(String originalName, byte[] content) {
         String safeName = sanitize(originalName);
         String id = UUID.randomUUID().toString();
@@ -41,13 +45,32 @@ public class FileStorageService {
         return info;
     }
 
+    public PageResponse<StoredFileInfo> listPaged(int page, int size) {
+        if (page < 0) page = 0;
+        if (size < 1 || size > 200) size = 20;
+
+        List<StoredFileInfo> all = list();
+
+        List<StoredFileInfo> sorted = all.stream()
+                .sorted(Comparator.comparing(StoredFileInfo::storedAt).reversed())
+                .toList();
+
+        int from = Math.min(page * size, sorted.size());
+        int to   = Math.min(from + size, sorted.size());
+        List<StoredFileInfo> content = sorted.subList(from, to);
+
+        int totalPages = (int) Math.ceil((double) sorted.size() / size);
+        return new PageResponse<>(content, page, size, sorted.size(), totalPages);
+    }
+
+    @Cacheable(value = "filesList")
     public List<StoredFileInfo> list() {
+        log.info("CACHE MISS: reading storage directory {}", storageRoot);
         try (Stream<Path> stream = Files.list(storageRoot)) {
             return stream
                     .filter(Files::isRegularFile)
                     .map(this::toInfo)
                     .filter(Objects::nonNull)
-                    .sorted(Comparator.comparing(StoredFileInfo::storedAt).reversed())
                     .collect(Collectors.toList());
         } catch (IOException e) {
             throw new IllegalStateException("Не удалось прочитать список файлов", e);
@@ -67,6 +90,7 @@ public class FileStorageService {
         return toInfo(findById(id));
     }
 
+    @CacheEvict(value = "filesList", allEntries = true)
     public void delete(String id) {
         Path path = findById(id);
         try {

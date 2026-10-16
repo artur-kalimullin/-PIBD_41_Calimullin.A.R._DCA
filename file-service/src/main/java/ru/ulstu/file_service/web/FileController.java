@@ -7,15 +7,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
+import ru.ulstu.file_service.domain.PageResponse;
 import ru.ulstu.file_service.domain.StoredFileInfo;
 import ru.ulstu.file_service.service.FileStorageService;
 import ru.ulstu.file_service.web.dto.UploadFileRequest;
 
+import java.time.Duration;
 import java.util.Base64;
 import java.util.List;
 
@@ -42,9 +46,41 @@ public class FileController {
     }
 
     @GetMapping
-    @Operation(summary = "Список файлов")
-    public List<StoredFileInfo> list() {
-        return service.list();
+    @Operation(summary = "Полный список файлов")
+    public ResponseEntity<List<StoredFileInfo>> listAll(WebRequest webRequest) {
+        log.info("GET /api/files (full)");
+
+        List<StoredFileInfo> all = service.list();
+
+        String etag = "\"" + Integer.toHexString(all.hashCode()) + "\"";
+        if (etag.equals(webRequest.getHeader("If-None-Match"))) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED).eTag(etag).build();
+        }
+        return ResponseEntity.ok()
+                .eTag(etag)
+                .cacheControl(CacheControl.maxAge(Duration.ofSeconds(30)).cachePublic())
+                .body(all);
+    }
+
+    @GetMapping("/paged")
+    @Operation(summary = "Список файлов с пагинацией")
+    public ResponseEntity<PageResponse<StoredFileInfo>> listPaged(
+            @RequestParam(defaultValue = "0")  int page,
+            @RequestParam(defaultValue = "20") int size,
+            WebRequest webRequest) {
+
+        log.info("GET /api/files/paged page={} size={}", page, size);
+
+        PageResponse<StoredFileInfo> result = service.listPaged(page, size);
+
+        String etag = "\"" + Integer.toHexString(result.hashCode()) + "\"";
+        if (etag.equals(webRequest.getHeader("If-None-Match"))) {
+            return ResponseEntity.status(HttpStatus.NOT_MODIFIED).eTag(etag).build();
+        }
+        return ResponseEntity.ok()
+                .eTag(etag)
+                .cacheControl(CacheControl.maxAge(Duration.ofSeconds(30)).cachePublic())
+                .body(result);
     }
 
     @GetMapping("/{id}")
