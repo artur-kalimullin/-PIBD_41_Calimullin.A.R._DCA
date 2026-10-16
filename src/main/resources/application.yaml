@@ -21,13 +21,23 @@ spring:
 server:
   port: ${SERVER_PORT:8082}
 
+jwt:
+  secret: ${JWT_SECRET:change_me_super_secret_key_32_bytes_min}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
 file:
   service:
-    url: ${FILE_SERVICE_URL:http://localhost:8084}
+    url: ${FILE_SERVICE_URL:http://file-service}
 
 report:
   service:
-    url: ${REPORT_SERVICE_URL:http://localhost:8083}
+    url: ${REPORT_SERVICE_URL:http://report-service}
 
 springdoc:
   swagger-ui:
@@ -37,10 +47,16 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,custom
+        include: health,info,metrics,prometheus,custom
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://jaeger:4318/v1/traces}
   metrics:
     tags:
       application: ${spring.application.name}

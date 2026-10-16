@@ -7,13 +7,20 @@ spring:
 
   cloud:
     gateway:
+      discovery:
+        locator:
+          enabled: true
       routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
         - id: teacher-service
-          uri: ${TEACHER_SERVICE_URL:http://localhost:8082}
+          uri: lb://teacher-service
           predicates:
             - Path=/api/teachers/**,/api/reports/**
         - id: file-service
-          uri: ${FILE_SERVICE_URL:http://localhost:8084}
+          uri: lb://file-service
           predicates:
             - Path=/api/files/**
 
@@ -22,16 +29,36 @@ spring:
           '[/**]':
             allowedOrigins: "*"
             allowedMethods: "*"
-            allowedHeaders: "*"
+            allowedHeaders: 
+              - "*"
+              - "Authorization"
+              - "Content-Type"
+              - "X-Trace-Id"
+
+jwt:
+  secret: ${JWT_SECRET:change_me_super_secret_key_32_bytes_min}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,custom
+        include: health,info,metrics,prometheus,custom
   endpoint:
     health:
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://jaeger:4318/v1/traces}
   metrics:
     tags:
       application: ${spring.application.name}

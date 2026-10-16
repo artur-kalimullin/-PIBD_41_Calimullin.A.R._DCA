@@ -37,6 +37,35 @@ services:
     networks:
       - teacher-net
 
+  eureka-server:
+    build:
+      context: .
+      dockerfile: eureka-server/Dockerfile
+    container_name: eureka-server
+    ports:
+      - '8761:8761'
+    networks:
+      - teacher-net
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    depends_on:
+      eureka-server:
+        condition: service_started
+    environment:
+      LOGSTASH_HOST: logstash
+      SERVER_PORT: 8085
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      OTLP_ENDPOINT: http://jaeger:4318/v1/traces
+    ports:
+      - '8085:8085'
+    networks:
+      - teacher-net
+
   teacher-service:
     build:
       context: .
@@ -45,7 +74,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      file-service:
+      eureka-server:
         condition: service_started
     environment:
       LOGSTASH_HOST: logstash
@@ -53,8 +82,11 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SERVER_PORT: ${SERVICE_PORT}
-      REPORT_SERVICE_URL: http://report-service:8083
-      FILE_SERVICE_URL: http://file-service:8084
+      REPORT_SERVICE_URL: http://report-service
+      FILE_SERVICE_URL: http://file-service
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     ports:
       - '${SERVICE_PORT}:${SERVICE_PORT}'
     networks:
@@ -70,13 +102,18 @@ services:
         condition: service_started
       artemis:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     environment:
       LOGSTASH_HOST: logstash
       SERVER_PORT: 8083
-      TEACHER_SERVICE_URL: http://teacher-service:8082
+      TEACHER_SERVICE_URL: http://teacher-service
       SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
       SPRING_ARTEMIS_USER: ${ARTEMIS_USER}
       SPRING_ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     restart: on-failure
     networks:
       - teacher-net
@@ -89,6 +126,8 @@ services:
     depends_on:
       artemis:
         condition: service_healthy
+      eureka-server:
+        condition: service_started
     environment:
       LOGSTASH_HOST: logstash
       SERVER_PORT: 8084
@@ -96,6 +135,9 @@ services:
       SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
       SPRING_ARTEMIS_USER: ${ARTEMIS_USER}
       SPRING_ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD}
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     ports:
       - '8084:8084'
     volumes:
@@ -112,13 +154,54 @@ services:
       - teacher-service
       - report-service
       - file-service
+      - auth-service
+      - eureka-server
     environment:
       LOGSTASH_HOST: logstash
       SERVER_PORT: 8080
-      TEACHER_SERVICE_URL: http://teacher-service:8082
-      FILE_SERVICE_URL: http://file-service:8084
+      EUREKA_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      OTLP_ENDPOINT: http://jaeger:4318/v1/traces
     ports:
       - '8080:8080'
+    networks:
+      - teacher-net
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - '16686:16686'
+      - '4317:4317'
+      - '4318:4318'
+    networks:
+      - teacher-net
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - '9090:9090'
+    networks:
+      - teacher-net
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '3000:3000'
+    depends_on:
+      - prometheus
     networks:
       - teacher-net
 
@@ -168,3 +251,4 @@ volumes:
   postgres-data:
   elasticsearch-data:
   file-storage-data:
+  grafana-data:

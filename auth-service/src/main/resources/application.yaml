@@ -1,0 +1,39 @@
+server:
+  port: ${SERVER_PORT:8085}
+
+spring:
+  application:
+    name: auth-service
+
+jwt:
+  secret: ${JWT_SECRET:change_me_super_secret_key_32_bytes_min}
+  expiration-ms: 3600000
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,custom
+  endpoint:
+    health:
+      show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://jaeger:4318/v1/traces}
+  metrics:
+    tags:
+      application: ${spring.application.name}
