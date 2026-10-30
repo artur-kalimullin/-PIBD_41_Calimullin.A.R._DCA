@@ -9,6 +9,9 @@ jwt:
   secret: ${JWT_SECRET:change_me_super_secret_key_32_bytes_min}
   expiration-ms: 3600000
 
+course:
+  discipline: Теория Автоматов
+
 eureka:
   client:
     service-url:
