@@ -1,15 +1,43 @@
-# Лабораторные работы №5-7.
+# Лабораторная работа №8. Многопоточные вычисления
 **Дисциплина:** Распределённые вычисления и приложения (DCA)  
 **Студент:** Калимуллин Артур Рамилевич  
 **Группа:** ПИБД-41  
 **Вариант:** 14 — Учёт преподавателей ВУЗа
----
-В проект, собранный в ЛР1–4, добавлены **три блока**: очередь, асинхронность через CompletableFuture и защита системы (JWT, трассировка, метрики, логи). Кроме существовавших gateway, teacher-service, report-service и file-service подняты новые контейнеры: auth-service (выдача JWT), eureka-server (service discovery), artemis (брокер очередей), jaeger (трейсы), prometheus + grafana (метрики) и стек ELK (elasticsearch + logstash + kibana) для логов.
----
-**ЛР5 — Очередь.** Передача CSV-отчёта из report-service в file-service переведена с прямого RestTemplate на JMS через **ActiveMQ Artemis**. report-service формирует CSV, кодирует в Base64 и кладёт сообщение CsvReportMessage в очередь report.csv.queue. file-service слушает её через @JmsListener (CsvReportListener) и сохраняет файл на диск. Если сохранение падает (например, имя файла начинается с fail-), file-service публикует событие FileSaveFailedEvent в очередь saga.compensation.queue. report-service его ловит (SagaCompensationListener) и один раз повторно отправляет файл с префиксом retry-, чтобы продемонстрировать **сага-компенсацию** без зацикливания. Конвертация сообщений — MappingJackson2MessageConverter с явными typeIdMappings. Новые эндпоинты через gateway: POST /api/reports/teachers/csv/save и POST /api/reports/teachers/csv/save-fail для демонстрации сбоя.
----
-**ЛР6 — Completable future.** В teacher-service добавлена асинхронная работа с файловым хранилищем. Настроен отдельный **пул reportTaskExecutor** с TaskDecorator, который прокидывает MDC (traceId) и RequestAttributes в асинхронные задачи. **Класс FileStorageAsyncClient** оборачивает вызовы file-service в CompletableFuture (listFilesAsync, findLatestCsvAsync, downloadAsync, waitForFileAsync — опрос хранилища до 15 секунд). **Класс AsyncReportService** строит цепочки: сохранить CSV через report-service и дождаться появления файла в хранилище; найти последний CSV и скачать его. Новые эндпоинты: POST /api/reports/teachers/csv/save-async и GET /api/reports/teachers/csv/latest.
----
-**ЛР7 — Авторизация и защита.** Добавлен **auth-service** с эндпоинтом POST /api/auth/login, который проверяет логин/пароль (BCrypt) и выдаёт **Bearer JWT** (jjwt, HMAC, TTL 1 час); в токен кладутся sub, roles, fullName, а для не-админа — ещё и discipline. Пользователи: admin/admin (роли ADMIN, USER) и teacher/teacher (USER). Все сервисы настроены как OAuth2 Resource Server на общем секрете JWT_SECRET; gateway — реактивная безопасность (NimbusReactiveJwtDecoder), открыты только /api/auth/** и /actuator/**. RestTemplate-интерцепторы в teacher-service и report-service прокидывают заголовки Authorization и X-Trace-Id между сервисами. Для трассировки в каждом сервисе есть TraceIdFilter (в gateway — TraceIdWebFilter): он генерирует или пробрасывает X-Trace-Id, кладёт его в MDC, а Micrometer Tracing с OTel-экспортёром отправляет спаны в Jaeger. Для метрик подключён Micrometer + Prometheus (/actuator/prometheus), плюс кастомный эндпоинт /actuator/custom с CPU, памятью JVM, потоками и uptime; Prometheus собирает все пять сервисов, Grafana подключена к нему как источник данных. Логи пишутся в консоль и через LogstashTcpSocketAppender уходят в Logstash -> Elasticsearch -> Kibana; в JSON-логах есть поля service, traceId, spanId.
----
-**Запуск — как и раньше**: cp .env.example .env, затем docker compose down -v и docker compose up --build. API доступно через gateway на :8080; Swagger — на портах сервисов (:8082, :8083, :8084, :8085). Инфраструктурные веб-интерфейсы после старта: ActiveMQ Artemis Console — http://localhost:8161 (логин/пароль teacher/teacher, сам брокер слушает :61616), Jaeger UI — :16686, Prometheus — :9090, Grafana — :3000 (admin/admin), Kibana — :5601, Eureka — :8761. Через Artemis Console в разделе Queues можно наблюдать очереди report.csv.queue и saga.compensation.queue, число отправленных/полученных сообщений и сообщения сага-компенсации — это удобная точка проверки ЛР5. Все запросы к API (кроме /api/auth/**) требуют заголовок Authorization: Bearer <token>, полученный через POST /api/auth/login.
+
+В рамках ЛР8 в проект была добавлена библиотека с параллельным алгоритмом сортировки, интегрированная в микросервисную архитектуру с возможностью мониторинга через Prometheus и Grafana.
+
+**Создание библиотеки `merge-sort-lib` и ядро алгоритма:**
+
+Для реализации алгоритма был создан отдельный Gradle-модуль merge-sort-lib (плагин java-library).
+
+- Подключение: Библиотека зарегистрирована в корневом settings.gradle (include 'merge-sort-lib') и подключена к основному сервису в teacher-service/build.gradle через implementation project(':merge-sort-lib'). Также Dockerfile был обновлен для копирования исходников библиотеки при сборке.
+
+- Ядро алгоритма (класс `ParallelMergeSort`):
+
+1. Входной массив разбивается на N частей (где N — заданное число потоков).
+2. Каждая часть сортируется параллельно в отдельном потоке (используется ExecutorService с фиксированным пулом).
+3. Выполняется параллельное попарное слияние (каждый раунд в потоках сливаются соседние пары).
+4. В конце возвращается отсортированный список и время выполнения в наносекундах.
+
+**Тестирование алгоритма:**
+
+Для проверки корректности работы библиотеки в teacher-service написан юнит-тест `ParallelMergeSortTest`.
+
+- В тесте берется эталонный массив из задания: [3, 2, 6, 9, 2, 3, 5, 8, 2, 1, 11].
+
+- Запускается параллельная сортировка с 5 потоками.
+
+- С помощью assertEquals проверяется, что результат совпадает с ожидаемым: [1, 2, 2, 2, 3, 3, 5, 6, 8, 9, 11].
+
+- В консоль выводится время выполнения алгоритма.
+
+**API-контроллер и визуализация в Grafana:**
+
+Для интеграции с сервисом данных был создан `SortedTeachersController` (доступен через Gateway).
+
+- GET /api/teachers/sorted?threads=N: загружает реальные ID преподавателей из БД, сортирует их нашим алгоритмом с заданным числом потоков и возвращает исходный и отсортированный массивы + время.
+
+- GET /api/teachers/sorted/benchmark?size=N&threads=...: генерирует синтетический массив для замера производительности при разном числе потоков.
+
+*Метрики и Grafana:* В контроллер внедрен `MeterRegistry`. Для замеров используется Timer из Micrometer с тегом threads. При каждом вызове эндпоинта замеряется время выполнения.
+Prometheus собирает метрики, а в Grafana построена столбчатая диаграмма (Bar chart), отображающая среднее время сортировки в зависимости от количества потоков. На графике наглядно виден эффект насыщения (Закон Амдала): после 4-8 потоков время перестает падать, а затем начинает расти из-за накладных расходов ОС на переключение контекста и ограничений физических ядер процессора.
