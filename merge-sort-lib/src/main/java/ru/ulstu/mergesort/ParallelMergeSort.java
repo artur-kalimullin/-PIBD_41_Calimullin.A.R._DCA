@@ -96,7 +96,7 @@ public final class ParallelMergeSort {
                 futures.add(executor.submit(() -> merge(left, right)));
             } else {
                 final List<T> single = chunks.get(i);
-                futures.add(executor.submit(() -> single)); // непарный — как есть
+                futures.add(executor.submit(() -> single));
             }
         }
 
